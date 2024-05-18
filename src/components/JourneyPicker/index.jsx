@@ -6,6 +6,8 @@ export const JourneyPicker = ({ onJourneyChange }) => {
   const [toCity, setToCity] = useState('');
   const [date, setDate] = useState('');
   const [cities, setCities] = useState([]);
+  const [dates, setDates] = useState([]);
+
   useEffect(() => {
     const fetchCities = async () => {
       const resp = await fetch(
@@ -17,12 +19,29 @@ export const JourneyPicker = ({ onJourneyChange }) => {
     fetchCities();
   }, []);
 
-  const handleSubmit = (event) => {
+  useEffect(() => {
+    const fetchDates = async () => {
+      const response = await fetch(
+        'https://apps.kodim.cz/daweb/leviexpress/api/dates',
+      );
+      const data = await response.json();
+      setDates(data.results);
+    };
+    fetchDates();
+  }, []);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     console.log('Odesílám formulář s cestou');
     console.log(fromCity);
     console.log(toCity);
     console.log(date);
+    const response = await fetch(
+      `https://apps.kodim.cz/daweb/leviexpress/api/journey?fromCity=${fromCity}&toCity=${toCity}&date=${date}`,
+    );
+    const data = await response.json();
+    console.log(data);
+    onJourneyChange(data.results);
   };
 
   return (
@@ -60,16 +79,15 @@ export const JourneyPicker = ({ onJourneyChange }) => {
                 setDate(event.target.value);
               }}
             >
-              <option value="">Vyberte</option>
-              <option value="datum01">Datum 01</option>
-              <option value="datum02">Datum 02</option>
-              <option value="datum03">Datum 03</option>
-              <option value="datum04">Datum 04</option>
-              <option value="datum05">Datum 05</option>
+              <DatesOptions dates={dates} />
             </select>
           </label>
           <div className="journey-picker__controls">
-            <button className="btn" type="submit">
+            <button
+              disabled={fromCity === '' || toCity === '' || date === ''}
+              className="btn"
+              type="submit"
+            >
               Vyhledat spoj
             </button>
           </div>
@@ -88,6 +106,22 @@ const CityOptions = ({ cities }) => {
         return (
           <option key={city.code} value={city.code}>
             {city.name}
+          </option>
+        );
+      })}
+    </>
+  );
+};
+
+const DatesOptions = ({ dates }) => {
+  return (
+    <>
+      <option value="">Vyberte</option>
+
+      {dates.map((date) => {
+        return (
+          <option key={date.dateBasic} value={date.dateBasic}>
+            {date.dateCs}
           </option>
         );
       })}
